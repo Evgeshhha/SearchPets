@@ -16,7 +16,7 @@ export interface PetAd {
   photoUrl?: string;
 }
 
-export type NewPetInput = Omit<PetAd, 'id' | 'status' | 'photoUrl'>;
+export type NewPetInput = Omit<PetAd, 'id' | 'status'>;
 export const PET_STATUSES: PetStatus[] = ['searching', 'found', 'closed'];
 export const PET_KINDS: PetKind[] = ['dog', 'cat', 'other'];
 

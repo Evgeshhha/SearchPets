@@ -43,5 +43,3 @@ export const MOCK_PETS: PetAd[] = [
     contactPhone: '+7 900 000-00-03',
   },
 ];
-
-export const getPetById = (id?: string) => MOCK_PETS.find((p) => p.id === id);

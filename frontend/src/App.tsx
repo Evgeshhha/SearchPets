@@ -3,8 +3,8 @@ import Layout from './components/Layout'
 import { PetDetailsPage } from './pages/pet-details'
 import { HomePage } from './pages/home'
 import { NotFoundPage } from './pages/not-found'
-import CreatePetPage from './pages/CreatePetPage'
-import FlyerPage from './pages/FlyerPage'
+import { CreatePetPage } from './pages/create-pet'
+import { FlyerPage } from './pages/flyer'
 
 export default function App() {
     return (
