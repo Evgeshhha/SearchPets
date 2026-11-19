@@ -19,7 +19,6 @@ export default function ShareButton({ title, url = window.location.href }: Props
                 if (error instanceof DOMException && error.name === 'AbortError') return;
             }
         }
-        await navigator.clipboard.writeText(url);
         try {
             await navigator.clipboard.writeText(url);
             setMessage('Ссылка скопирована');
