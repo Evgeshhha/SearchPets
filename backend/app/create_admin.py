@@ -20,7 +20,7 @@ def main() -> None:
     with SessionLocal() as db:
         user = db.scalar(select(User).where(User.email == email))
         if user:
-            user.is_admin = True  # существующего пользователя просто повышаем
+            user.is_admin = True  
         else:
             db.add(User(email=email, name=name, password_hash=hash_password(password), is_admin=True))
         db.commit()
