@@ -1,5 +1,6 @@
 from functools import lru_cache
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy.engine import URL
 
@@ -15,6 +16,20 @@ class Settings(BaseSettings):
 
     frontend_url: str
     cors_origins: list[str]
+
+    jwt_secret_key: str
+    jwt_algorithm: str = "HS256"
+    access_token_expire_minutes: int = 15
+    refresh_token_expire_days: int = 7
+
+    upload_dir: str = "uploads"
+
+    @field_validator("jwt_secret_key")
+    @classmethod
+    def _secret_is_strong(cls, value: str) -> str:
+        if len(value) < 32:
+            raise ValueError("JWT_SECRET_KEY должен содержать не менее 32 символов")
+        return value
 
     @property
     def sqlalchemy_url(self) -> URL:

@@ -2,9 +2,10 @@ from fastapi import APIRouter, Depends, Query, Response, status
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
+from app.crud import auth as auth_crud
 from app.crud import crud
 from app.db.session import get_db
-from app.models.models import AnnouncementStatus, PetKind
+from app.models.models import AnnouncementStatus, PetKind, User
 from app.schemas import (
     AnnouncementCreate,
     AnnouncementRead,
@@ -12,18 +13,43 @@ from app.schemas import (
     FlyerTemplateCreate,
     FlyerTemplateRead,
     FlyerTemplateUpdate,
+    LoginRequest,
     PetCreate,
     PetRead,
     PetUpdate,
+    RefreshRequest,
     ShareInfo,
     SightingCreate,
     SightingRead,
+    TokenPair,
+    UploadRead,
+    UserCreate,
+    UserRead,
 )
 
 router = APIRouter(prefix="/api")
+auth = APIRouter(prefix="/auth", tags=["Аутентификация"])
+uploads = APIRouter(prefix="/uploads", tags=["Загрузки"])
 pets = APIRouter(prefix="/pets", tags=["Животные"])
 templates = APIRouter(prefix="/flyer-templates", tags=["Шаблоны листовок"])
 announcements = APIRouter(prefix="/announcements", tags=["Объявления"])
+
+@auth.post("/register", response_model=UserRead, status_code=status.HTTP_201_CREATED)
+def register(data: UserCreate, db: Session = Depends(get_db)):
+    return auth_crud.register_user(db, data)
+
+@auth.post("/login", response_model=TokenPair)
+def login(data: LoginRequest, db: Session = Depends(get_db)):
+    return auth_crud.login(db, data)
+
+@auth.post("/refresh", response_model=TokenPair)
+def refresh(data: RefreshRequest, db: Session = Depends(get_db)):
+    return auth_crud.refresh(db, data.refresh_token)
+
+@auth.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
+def logout(data: RefreshRequest, db: Session = Depends(get_db)):
+    auth_crud.logout(db, data.refresh_token)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 @pets.get("", response_model=list[PetRead])
 def list_pets(
@@ -124,6 +150,7 @@ def delete_sighting(ann_id: int, sighting_id: int, db: Session = Depends(get_db)
     crud.delete_sighting(db, ann_id, sighting_id)
     return Response(status_code=204)
 
+router.include_router(auth)
 router.include_router(pets)
 router.include_router(templates)
 router.include_router(announcements)

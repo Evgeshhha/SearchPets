@@ -1,7 +1,7 @@
 from datetime import date, datetime, timezone
 from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, StringConstraints, field_validator, model_validator
 
 from app.models.models import AnnouncementStatus, PetKind
 
@@ -11,6 +11,41 @@ Name = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max
 
 class ORMModel(BaseModel):
     model_config = ConfigDict(from_attributes=True)
+
+class UserCreate(BaseModel):
+    email: EmailStr
+    name: Name
+    password: str = Field(min_length=8, max_length=128)
+
+    @field_validator("password")
+    @classmethod
+    def _password_strength(cls, value: str) -> str:
+        if not any(c.isalpha() for c in value) or not any(c.isdigit() for c in value):
+            raise ValueError("Пароль должен содержать хотя бы одну букву и одну цифру")
+        return value
+
+class UserRead(ORMModel):
+    id: int
+    email: str
+    name: str
+    is_admin: bool
+    created_at: datetime
+
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str = Field(min_length=1, max_length=128)
+
+class RefreshRequest(BaseModel):
+    refresh_token: str = Field(min_length=1, max_length=512)
+
+class TokenPair(BaseModel):
+    access_token: str
+    refresh_token: str
+    token_type: str = "bearer"
+    expires_in: int = Field(description="Срок жизни access token, секунд")
+
+class UploadRead(BaseModel):
+    url: str
 
 class PetCreate(BaseModel):
     name: Name
@@ -30,6 +65,7 @@ class PetUpdate(BaseModel):
 
 class PetRead(ORMModel, PetCreate):
     id: int
+    owner_id: int | None
     created_at: datetime
 
 class FlyerTemplateCreate(BaseModel):
@@ -98,6 +134,7 @@ class AnnouncementRead(ORMModel):
     status: AnnouncementStatus
     contact_name: str
     contact_phone: str
+    owner_id: int | None
     created_at: datetime
     updated_at: datetime
 
