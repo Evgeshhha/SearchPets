@@ -1,22 +1,18 @@
 import { Link as RouterLink } from 'react-router-dom'
-import { Box, Card, CardActionArea, CardContent, CardMedia, Stack, Typography } from '@mui/material'
+import { Card, CardActionArea, CardContent, Stack, Typography } from '@mui/material'
 import PlaceIcon from '@mui/icons-material/Place'
-import PetsIcon from '@mui/icons-material/Pets'
-import { KIND_LABEL } from '../types'
-import type { PetAd } from '../types'
+import PetPhoto from './PetPhoto'
+import { KIND_LABEL } from '../model/types'
+import type { PetAd } from '../model/types'
 import StatusChip from './StatusChip'
 
 export default function PetCard({ pet }: { pet: PetAd }) {
     return (
-        <Card sx={{ height: '100%' }}>
+        <Card sx={{ height: '100%', 
+        transition: 'transform 0.2s ease, box-shadow 0.2s ease', 
+        '&:hover': { transform: 'translateY(-4px)', boxShadow: 6 }}}>
             <CardActionArea component={RouterLink} to={`/pets/${pet.id}`} sx={{ height: '100%' }}>
-                {pet.photoUrl ? (
-                    <CardMedia component="img" height="180" image={pet.photoUrl} alt={pet.name} />
-                ) : (
-                    <Box sx={{ height: 180, display: 'grid', placeItems: 'center', bgcolor: 'grey.200' }}>
-                        <PetsIcon sx={{ fontSize: 64, color: 'grey.500' }} />
-                    </Box>
-                )}
+                <PetPhoto src={pet.photoUrl} alt={pet.name} />
                 <CardContent sx={{ width: '100%', boxSizing: 'border-box' }}>
                     <Stack direction="row" sx={{
                         justifyContent: 'space-between',

@@ -1,4 +1,4 @@
-import type { PetAd } from '../types';
+import type { PetAd } from '../model/types';
 
 export const MOCK_PETS: PetAd[] = [
   {

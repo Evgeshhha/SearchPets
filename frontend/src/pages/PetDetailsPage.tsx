@@ -1,9 +1,9 @@
 import { Link as RouterLink, useParams } from 'react-router-dom'
 import { Box, Button, Card, CardMedia, Grid, Stack, Typography } from '@mui/material'
 import PrintIcon from '@mui/icons-material/Print'
-import { getPetById } from '../data/mock'
-import { KIND_LABEL } from '../types'
-import StatusChip from '../components/StatusChip'
+import { getPetById } from '../entities/pet/api/mock'
+import { KIND_LABEL } from '../entities/pet/model/types'
+import StatusChip from '../entities/pet/ui/StatusChip'
 import ShareButton from '../components/ShareButton.tsx'
 import NotFoundPage from './NotFoundPage.tsx'
 

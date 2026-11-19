@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { Box, Button, Paper, Stack, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material'
 import PrintIcon from '@mui/icons-material/Print'
-import { getPetById } from '../data/mock'
-import { KIND_LABEL } from '../types'
+import { getPetById } from '../entities/pet/api/mock'
+import { KIND_LABEL } from '../entities/pet/model/types'
 import NotFoundPage from './NotFoundPage'
 
 const TEMPLATES = {

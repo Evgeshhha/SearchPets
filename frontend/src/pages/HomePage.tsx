@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react';
 import { Box, Grid, MenuItem, Stack, TextField, Typography } from '@mui/material';
-import { MOCK_PETS } from '../data/mock';
-import PetCard from '../components/PetCard';
-import { KIND_LABEL, STATUS_LABEL } from '../types';
-import type { PetKind, PetStatus } from '../types';
+import { MOCK_PETS } from '../entities/pet/api/mock';
+import PetCard from '../entities/pet/ui/PetCard';
+import { KIND_LABEL, STATUS_LABEL } from '../entities/pet/model/types';
+import type { PetKind, PetStatus } from '../entities/pet/model/types';
 
 export default function HomePage() {
     const [status, setStatus] = useState<PetStatus | ''>('');

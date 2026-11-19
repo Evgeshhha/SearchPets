@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Alert, Button, Grid, MenuItem, Paper, TextField, Typography } from '@mui/material'
-import { KIND_LABEL } from '../types'
+import { KIND_LABEL } from '../entities/pet/model/types'
 
 export default function CreatePetPage() {
     const navigate = useNavigate();
