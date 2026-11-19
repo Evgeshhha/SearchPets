@@ -1,6 +1,6 @@
 import { Route, Routes } from 'react-router-dom'
 import Layout from './components/Layout'
-import PetDetailsPage from './pages/PetDetailsPage'
+import { PetDetailsPage } from './pages/pet-details'
 import { HomePage } from './pages/home'
 import { NotFoundPage } from './pages/not-found'
 import CreatePetPage from './pages/CreatePetPage'

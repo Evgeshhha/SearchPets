@@ -8,18 +8,24 @@ interface Props {
 }
 
 export default function ShareButton({ title, url = window.location.href }: Props) {
-    const [copied, setCopied] = useState(false);
+    const [message, setMessage] = useState<string | null>(null);
 
     const handleShare = async () => {
         if (navigator.share) {
             try {
                 await navigator.share({ title, url });
                 return;
-            } catch {
+            } catch (error) {
+                if (error instanceof DOMException && error.name === 'AbortError') return;
             }
         }
         await navigator.clipboard.writeText(url);
-        setCopied(true);
+        try {
+            await navigator.clipboard.writeText(url);
+            setMessage('Ссылка скопирована');
+        } catch {
+            setMessage('Не удалось скопировать ссылку');
+        }
     };
 
     return (
@@ -28,10 +34,10 @@ export default function ShareButton({ title, url = window.location.href }: Props
                 Поделиться
             </Button>
             <Snackbar
-                open={copied}
+                open={message !== null}
                 autoHideDuration={2500}
-                onClose={() => setCopied(false)}
-                message="Ссылка скопирована"
+                onClose={() => setMessage(null)}
+                message={message}
             />
         </>
     );
