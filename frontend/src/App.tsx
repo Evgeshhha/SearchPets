@@ -1,8 +1,8 @@
 import { Route, Routes } from 'react-router-dom'
 import Layout from './components/Layout'
-import HomePage from './pages/HomePage'
 import PetDetailsPage from './pages/PetDetailsPage'
-import NotFoundPage from './pages/NotFoundPage'
+import { HomePage } from './pages/home'
+import { NotFoundPage } from './pages/not-found'
 import CreatePetPage from './pages/CreatePetPage'
 import FlyerPage from './pages/FlyerPage'
 

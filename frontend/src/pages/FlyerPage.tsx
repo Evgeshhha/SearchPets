@@ -4,7 +4,7 @@ import { Box, Button, Paper, Stack, ToggleButton, ToggleButtonGroup, Typography 
 import PrintIcon from '@mui/icons-material/Print'
 import { getPetById } from '../entities/pet/api/mock'
 import { KIND_LABEL } from '../entities/pet/model/types'
-import NotFoundPage from './NotFoundPage'
+import { NotFoundPage } from './not-found'
 
 const TEMPLATES = {
     classic: { label: 'Классический', bg: '#ffffff', headBg: '#c62828', headColor: '#fff' },

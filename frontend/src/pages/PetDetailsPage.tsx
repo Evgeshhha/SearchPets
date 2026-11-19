@@ -5,7 +5,7 @@ import { getPetById } from '../entities/pet/api/mock'
 import { KIND_LABEL } from '../entities/pet/model/types'
 import StatusChip from '../entities/pet/ui/StatusChip'
 import ShareButton from '../components/ShareButton.tsx'
-import NotFoundPage from './NotFoundPage.tsx'
+import { NotFoundPage } from './not-found'
 
 export default function PetDetailsPage() {
     const { id } = useParams();
