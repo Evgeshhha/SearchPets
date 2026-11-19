@@ -3,7 +3,7 @@ from typing import TypeVar
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session, joinedload
 
-from app.core.errors import ConflictError, NotFoundError
+from app.core.errors import ConflictError, ForbiddenError, NotFoundError
 from app.models.models import (
     Announcement,
     AnnouncementStatus,
@@ -11,6 +11,7 @@ from app.models.models import (
     Pet,
     PetKind,
     Sighting,
+    User,
 )
 from app.schemas import (
     AnnouncementCreate,
@@ -30,6 +31,11 @@ def _get_or_404(db: Session, model: type[T], obj_id: int, label: str) -> T:
         raise NotFoundError(f"{label} с id={obj_id} не найден(а)")
     return obj
 
+def ensure_can_modify(obj, user: User) -> None:
+    """Изменять и удалять чужие данные нельзя; администратор может модерировать."""
+    if obj.owner_id != user.id and not user.is_admin:
+        raise ForbiddenError("Нет прав на изменение этого ресурса")
+
 def _apply(obj, data: dict) -> None:
     for key, value in data.items():
         setattr(obj, key, value)
@@ -43,14 +49,15 @@ def list_pets(db: Session, kind: PetKind | None, limit: int, offset: int) -> lis
 def get_pet(db: Session, pet_id: int) -> Pet:
     return _get_or_404(db, Pet, pet_id, "Животное")
 
-def create_pet(db: Session, data: PetCreate) -> Pet:
-    pet = Pet(**data.model_dump())
+def create_pet(db: Session, data: PetCreate, user: User) -> Pet:
+    pet = Pet(**data.model_dump(), owner_id=user.id)
     db.add(pet)
     db.commit()
     return pet
 
-def update_pet(db: Session, pet_id: int, data: PetUpdate) -> Pet:
+def update_pet(db: Session, pet_id: int, data: PetUpdate, user: User) -> Pet:
     pet = get_pet(db, pet_id)
+    ensure_can_modify(pet, user)
     changes = data.model_dump(exclude_unset=True)
     for required in ("name", "kind"):
         if required in changes and changes[required] is None:
@@ -59,8 +66,10 @@ def update_pet(db: Session, pet_id: int, data: PetUpdate) -> Pet:
     db.commit()
     return pet
 
-def delete_pet(db: Session, pet_id: int) -> None:
-    db.delete(get_pet(db, pet_id))
+def delete_pet(db: Session, pet_id: int, user: User) -> None:
+    pet = get_pet(db, pet_id)
+    ensure_can_modify(pet, user)
+    db.delete(pet)
     db.commit()
 
 def list_templates(db: Session) -> list[FlyerTemplate]:
@@ -125,27 +134,30 @@ def list_announcements(
 def get_announcement(db: Session, ann_id: int) -> Announcement:
     return _get_or_404(db, Announcement, ann_id, "Объявление")
 
-def create_announcement(db: Session, data: AnnouncementCreate) -> Announcement:
+def create_announcement(db: Session, data: AnnouncementCreate, user: User) -> Announcement:
     if data.flyer_template_id is not None:
         get_template(db, data.flyer_template_id)
 
     if data.pet is not None:
-        pet = Pet(**data.pet.model_dump())
+        pet = Pet(**data.pet.model_dump(), owner_id=user.id)
         db.add(pet)
         db.flush()
     else:
         pet = get_pet(db, data.pet_id)
+        ensure_can_modify(pet, user)  # объявление можно создать только для своего питомца
 
     ann = Announcement(
         pet_id=pet.id,
+        owner_id=user.id,
         **data.model_dump(exclude={"pet", "pet_id"}),
     )
     db.add(ann)
     db.commit()
     return ann
 
-def update_announcement(db: Session, ann_id: int, data: AnnouncementUpdate) -> Announcement:
+def update_announcement(db: Session, ann_id: int, data: AnnouncementUpdate, user: User) -> Announcement:
     ann = get_announcement(db, ann_id)
+    ensure_can_modify(ann, user)
     changes = data.model_dump(exclude_unset=True)
     for required in ("last_seen_place", "last_seen_at", "status", "contact_name", "contact_phone"):
         if required in changes and changes[required] is None:
@@ -162,8 +174,10 @@ def update_announcement(db: Session, ann_id: int, data: AnnouncementUpdate) -> A
     db.commit()
     return ann
 
-def delete_announcement(db: Session, ann_id: int) -> None:
-    db.delete(get_announcement(db, ann_id))
+def delete_announcement(db: Session, ann_id: int, user: User) -> None:
+    ann = get_announcement(db, ann_id)
+    ensure_can_modify(ann, user)
+    db.delete(ann)
     db.commit()
 
 def list_sightings(db: Session, ann_id: int) -> list[Sighting]:
@@ -178,8 +192,9 @@ def create_sighting(db: Session, ann_id: int, data: SightingCreate) -> Sighting:
     db.commit()
     return sighting
 
-def delete_sighting(db: Session, ann_id: int, sighting_id: int) -> None:
-    get_announcement(db, ann_id)
+def delete_sighting(db: Session, ann_id: int, sighting_id: int, user: User) -> None:
+    ann = get_announcement(db, ann_id)
+    ensure_can_modify(ann, user)  # отметки удаляет владелец объявления
     sighting = db.get(Sighting, sighting_id)
     if sighting is None or sighting.announcement_id != ann_id:
         raise NotFoundError(f"Отметка с id={sighting_id} не найдена в объявлении id={ann_id}")

@@ -7,14 +7,14 @@ from fastapi.staticfiles import StaticFiles
 from app.api.routes import router
 from app.core.config import get_settings
 from app.core.errors import register_error_handlers
-from app.db.init_db import init_db
+from app.init_db import main as init_database
 
 settings = get_settings()
 
 app = FastAPI(title="Найдись, друг! API", version="0.1.0")
 @app.on_event("startup")
 def on_startup():
-    init_db()
+    init_database()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,

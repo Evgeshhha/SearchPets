@@ -1,7 +1,9 @@
-from fastapi import APIRouter, Depends, Query, Response, status
+from fastapi import APIRouter, Depends, File, Query, Response, UploadFile, status
 from sqlalchemy.orm import Session
 
+from app.api.deps import get_current_user, require_admin
 from app.core.config import get_settings
+from app.core.uploads import save_photo
 from app.crud import auth as auth_crud
 from app.crud import crud
 from app.db.session import get_db
@@ -51,6 +53,14 @@ def logout(data: RefreshRequest, db: Session = Depends(get_db)):
     auth_crud.logout(db, data.refresh_token)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
+@auth.get("/me", response_model=UserRead)
+def me(user: User = Depends(get_current_user)):
+    return user
+
+@uploads.post("", response_model=UploadRead, status_code=status.HTTP_201_CREATED)
+async def upload_photo(file: UploadFile = File(...), _: User = Depends(get_current_user)):
+    return UploadRead(url=await save_photo(file))
+
 @pets.get("", response_model=list[PetRead])
 def list_pets(
     kind: PetKind | None = None,
@@ -61,20 +71,25 @@ def list_pets(
     return crud.list_pets(db, kind, limit, offset)
 
 @pets.post("", response_model=PetRead, status_code=status.HTTP_201_CREATED)
-def create_pet(data: PetCreate, db: Session = Depends(get_db)):
-    return crud.create_pet(db, data)
+def create_pet(data: PetCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    return crud.create_pet(db, data, user)
 
 @pets.get("/{pet_id}", response_model=PetRead)
 def get_pet(pet_id: int, db: Session = Depends(get_db)):
     return crud.get_pet(db, pet_id)
 
 @pets.patch("/{pet_id}", response_model=PetRead)
-def update_pet(pet_id: int, data: PetUpdate, db: Session = Depends(get_db)):
-    return crud.update_pet(db, pet_id, data)
+def update_pet(
+    pet_id: int,
+    data: PetUpdate,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    return crud.update_pet(db, pet_id, data, user)
 
 @pets.delete("/{pet_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_pet(pet_id: int, db: Session = Depends(get_db)):
-    crud.delete_pet(db, pet_id)
+def delete_pet(pet_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    crud.delete_pet(db, pet_id, user)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 @templates.get("", response_model=list[FlyerTemplateRead])
@@ -82,7 +97,7 @@ def list_templates(db: Session = Depends(get_db)):
     return crud.list_templates(db)
 
 @templates.post("", response_model=FlyerTemplateRead, status_code=status.HTTP_201_CREATED)
-def create_template(data: FlyerTemplateCreate, db: Session = Depends(get_db)):
+def create_template(data: FlyerTemplateCreate, db: Session = Depends(get_db), _: User = Depends(require_admin)):
     return crud.create_template(db, data)
 
 @templates.get("/{template_id}", response_model=FlyerTemplateRead)
@@ -90,11 +105,16 @@ def get_template(template_id: int, db: Session = Depends(get_db)):
     return crud.get_template(db, template_id)
 
 @templates.patch("/{template_id}", response_model=FlyerTemplateRead)
-def update_template(template_id: int, data: FlyerTemplateUpdate, db: Session = Depends(get_db)):
+def update_template(
+    template_id: int,
+    data: FlyerTemplateUpdate,
+    db: Session = Depends(get_db),
+    _: User = Depends(require_admin),
+):
     return crud.update_template(db, template_id, data)
 
 @templates.delete("/{template_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_template(template_id: int, db: Session = Depends(get_db)):
+def delete_template(template_id: int, db: Session = Depends(get_db), _: User = Depends(require_admin)):
     crud.delete_template(db, template_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -110,20 +130,29 @@ def list_announcements(
     return crud.list_announcements(db, status, kind, q, limit, offset)
 
 @announcements.post("", response_model=AnnouncementRead, status_code=201)
-def create_announcement(data: AnnouncementCreate, db: Session = Depends(get_db)):
-    return crud.create_announcement(db, data)
+def create_announcement(
+    data: AnnouncementCreate,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    return crud.create_announcement(db, data, user)
 
 @announcements.get("/{ann_id}", response_model=AnnouncementRead)
 def get_announcement(ann_id: int, db: Session = Depends(get_db)):
     return crud.get_announcement(db, ann_id)
 
 @announcements.patch("/{ann_id}", response_model=AnnouncementRead)
-def update_announcement(ann_id: int, data: AnnouncementUpdate, db: Session = Depends(get_db)):
-    return crud.update_announcement(db, ann_id, data)
+def update_announcement(
+    ann_id: int,
+    data: AnnouncementUpdate,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    return crud.update_announcement(db, ann_id, data, user)
 
 @announcements.delete("/{ann_id}", status_code=204)
-def delete_announcement(ann_id: int, db: Session = Depends(get_db)):
-    crud.delete_announcement(db, ann_id)
+def delete_announcement(ann_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    crud.delete_announcement(db, ann_id, user)
     return Response(status_code=204)
 
 @announcements.get("/{ann_id}/share", response_model=ShareInfo)
@@ -146,11 +175,17 @@ def create_sighting(ann_id: int, data: SightingCreate, db: Session = Depends(get
     return crud.create_sighting(db, ann_id, data)
 
 @announcements.delete("/{ann_id}/sightings/{sighting_id}", status_code=204)
-def delete_sighting(ann_id: int, sighting_id: int, db: Session = Depends(get_db)):
-    crud.delete_sighting(db, ann_id, sighting_id)
+def delete_sighting(
+    ann_id: int,
+    sighting_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    crud.delete_sighting(db, ann_id, sighting_id, user)
     return Response(status_code=204)
 
 router.include_router(auth)
+router.include_router(uploads)
 router.include_router(pets)
 router.include_router(templates)
 router.include_router(announcements)

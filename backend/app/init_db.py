@@ -15,7 +15,9 @@ DEFAULT_TEMPLATES = [
 ]
 
 
-def main(demo: bool = False) -> None:
+def main(demo: bool = False, reset: bool = False) -> None:
+    if reset:
+        Base.metadata.drop_all(engine) 
     Base.metadata.create_all(engine)
     with SessionLocal() as db:
         for code, title, header, bg in DEFAULT_TEMPLATES:
@@ -40,4 +42,4 @@ def main(demo: bool = False) -> None:
 
 
 if __name__ == "__main__":
-    main(demo="--demo" in sys.argv)
+    main(demo="--demo" in sys.argv, reset="--reset" in sys.argv)
