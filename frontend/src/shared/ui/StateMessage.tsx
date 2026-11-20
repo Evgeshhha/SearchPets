@@ -9,7 +9,6 @@ interface Props {
     role?: 'status' | 'alert';
 }
 
-/** Универсальный блок для состояний «пусто» и «ошибка». */
 export default function StateMessage({ icon, title, description, action, role = 'status' }: Props) {
     return (
         <Stack spacing={1.5} role={role} sx={{ alignItems: 'center', textAlign: 'center', py: 8 }}>

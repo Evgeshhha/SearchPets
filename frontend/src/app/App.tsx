@@ -7,6 +7,7 @@ import { LoginPage } from '../pages/login';
 import { NotFoundPage } from '../pages/not-found';
 import { PetDetailsPage } from '../pages/pet-details';
 import { RegisterPage } from '../pages/register';
+import { EditPetPage } from '../pages/edit-pet';
 import Layout from './layouts/Layout';
 
 export default function App() {
@@ -18,6 +19,7 @@ export default function App() {
                 <Route path="register" element={<RegisterPage />} />
                 <Route element={<RequireAuth />}>
                     <Route path="pets/new" element={<CreatePetPage />} />
+                    <Route path="pets/:id/edit" element={<EditPetPage />} />
                 </Route>
                 <Route path="pets/:id" element={<PetDetailsPage />} />
                 <Route path="pets/:id/flyer" element={<FlyerPage />} />

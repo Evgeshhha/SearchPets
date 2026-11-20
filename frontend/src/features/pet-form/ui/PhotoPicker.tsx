@@ -8,10 +8,23 @@ interface Props {
     file: File | null;
     error?: string;
     disabled?: boolean;
+    currentUrl?: string;
+    removeCurrent?: boolean;
     onChange: (file: File | null) => void;
+    onRemoveCurrentChange?: (remove: boolean) => void;
 }
 
-export default function PhotoPicker({ file, error, disabled, onChange }: Props) {
+const thumbSx = { width: 56, height: 56, objectFit: 'cover', borderRadius: 1 } as const;
+
+export default function PhotoPicker({
+    file,
+    error,
+    disabled,
+    currentUrl,
+    removeCurrent = false,
+    onChange,
+    onRemoveCurrentChange,
+}: Props) {
     const [preview, setPreview] = useState<string>();
 
     useEffect(() => {
@@ -26,8 +39,11 @@ export default function PhotoPicker({ file, error, disabled, onChange }: Props) 
 
     const handleSelect = (e: ChangeEvent<HTMLInputElement>) => {
         onChange(e.target.files?.[0] ?? null);
+        onRemoveCurrentChange?.(false);
         e.target.value = ''; 
     };
+
+    const hasCurrent = Boolean(currentUrl) && !file;
 
     return (
         <Box>
@@ -40,23 +56,38 @@ export default function PhotoPicker({ file, error, disabled, onChange }: Props) 
                     startIcon={<AddPhotoAlternateIcon />}
                     sx={{ height: 56, flexShrink: 0 }}
                 >
-                    {file ? 'Заменить фото' : 'Выбрать фото'}
+                    {file || hasCurrent ? 'Заменить фото' : 'Выбрать фото'}
                     <input type="file" hidden accept="image/jpeg,image/png,image/webp" onChange={handleSelect} />
                 </Button>
+
                 {file && (
                     <>
-                        {preview && !error && (
-                            <Box
-                                component="img"
-                                src={preview}
-                                alt="Предпросмотр фото"
-                                sx={{ width: 56, height: 56, objectFit: 'cover', borderRadius: 1 }}
-                            />
-                        )}
+                        {preview && !error && <Box component="img" src={preview} alt="Предпросмотр фото" sx={thumbSx} />}
                         <Typography variant="body2" noWrap sx={{ flexGrow: 1 }}>{file.name}</Typography>
-                        <IconButton aria-label="Убрать фото" disabled={disabled} onClick={() => onChange(null)}>
+                        <IconButton aria-label="Убрать выбранное фото" disabled={disabled} onClick={() => onChange(null)}>
                             <DeleteIcon />
                         </IconButton>
+                    </>
+                )}
+
+                {hasCurrent && !removeCurrent && (
+                    <>
+                        <Box component="img" src={currentUrl} alt="Текущее фото" sx={thumbSx} />
+                        <Typography variant="body2" sx={{ flexGrow: 1 }}>Текущее фото</Typography>
+                        {onRemoveCurrentChange && (
+                            <Button color="error" disabled={disabled} onClick={() => onRemoveCurrentChange(true)}>
+                                Удалить фото
+                            </Button>
+                        )}
+                    </>
+                )}
+
+                {hasCurrent && removeCurrent && (
+                    <>
+                        <Typography variant="body2" color="error" sx={{ flexGrow: 1 }}>
+                            Фото будет удалено при сохранении
+                        </Typography>
+                        <Button disabled={disabled} onClick={() => onRemoveCurrentChange?.(false)}>Отменить</Button>
                     </>
                 )}
             </Stack>

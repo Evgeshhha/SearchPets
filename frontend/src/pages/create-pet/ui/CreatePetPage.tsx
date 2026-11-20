@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { Paper, Typography } from '@mui/material';
-import { CreatePetForm } from '../../../features/create-pet';
+import { PetForm } from '../../../features/pet-form';
 import { Appear } from '../../../shared/ui';
 
 export default function CreatePetPage() {
@@ -13,7 +13,7 @@ export default function CreatePetPage() {
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
                     Поля со звёздочкой обязательны для заполнения.
                 </Typography>
-                <CreatePetForm onCreated={(id) => navigate(`/pets/${id}`)} />
+                <PetForm onSaved={(id) => navigate(`/pets/${id}`)} />
             </Paper>
         </Appear>
     );

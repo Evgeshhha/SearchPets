@@ -1,12 +1,16 @@
-import { Link as RouterLink, useParams } from 'react-router-dom';
+import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom';
 import { Button, Card, Grid, Skeleton, Stack, Typography } from '@mui/material';
+import EditIcon from '@mui/icons-material/Edit';
 import PrintIcon from '@mui/icons-material/Print';
-import { fetchPet, KIND_LABEL, PetPhoto, StatusChip } from '../../../entities/pet';
+import { canManagePet, fetchPet, KIND_LABEL, PetPhoto, StatusChip } from '../../../entities/pet';
+import { useAuth } from '../../../entities/user';
 import { ChangePetStatus } from '../../../features/change-pet-status';
+import { DeletePetButton } from '../../../features/delete-pet';
 import { ShareButton } from '../../../features/share-pet';
 import { formatDate, useAsync } from '../../../shared/lib';
 import { Appear, ErrorState } from '../../../shared/ui';
 import { NotFoundPage } from '../../not-found';
+import SightingsSection from './SightingsSection';
 
 function DetailsSkeleton() {
     return (
@@ -27,6 +31,8 @@ function DetailsSkeleton() {
 
 export default function PetDetailsPage() {
     const { id } = useParams();
+    const navigate = useNavigate();
+    const { user } = useAuth();
     const { state, reload, setData } = useAsync(() => fetchPet(id), [id]);
 
     if (state.status === 'loading') return <DetailsSkeleton />;
@@ -34,6 +40,8 @@ export default function PetDetailsPage() {
 
     const pet = state.data;
     if (!pet) return <NotFoundPage />;
+
+    const canManage = canManagePet(pet, user);
 
     return (
         <Appear>
@@ -57,10 +65,10 @@ export default function PetDetailsPage() {
                         {pet.description && <Typography>{pet.description}</Typography>}
                         <Typography><b>Контакт:</b> {pet.contactName}, {pet.contactPhone}</Typography>
 
-                        <ChangePetStatus pet={pet} onChanged={setData} />
+                        {canManage && <ChangePetStatus pet={pet} onChanged={setData} />}
 
                         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ pt: 1 }}>
-                            <ShareButton title={`Пропал питомец: ${pet.name}`} />
+                            <ShareButton petId={pet.id} title={`Пропал питомец: ${pet.name}`} />
                             <Button
                                 variant="contained"
                                 startIcon={<PrintIcon />}
@@ -69,10 +77,17 @@ export default function PetDetailsPage() {
                             >
                                 Листовка
                             </Button>
+                            {canManage && (
+                                <Button variant="outlined" startIcon={<EditIcon />} component={RouterLink} to={`/pets/${pet.id}/edit`}>
+                                    Редактировать
+                                </Button>
+                            )}
+                            {canManage && <DeletePetButton pet={pet} onDeleted={() => navigate('/')} />}
                         </Stack>
                     </Stack>
                 </Grid>
             </Grid>
+            <SightingsSection pet={pet} canManage={canManage} />
         </Appear>
     );
 }

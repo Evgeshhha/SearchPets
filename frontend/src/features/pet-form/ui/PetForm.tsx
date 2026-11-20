@@ -2,9 +2,10 @@ import { useEffect, useRef } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import { Alert, Button, CircularProgress, Collapse, Grid, MenuItem, TextField } from '@mui/material';
 import { KIND_LABEL, PET_KINDS } from '../../../entities/pet';
-import type { PetKind } from '../../../entities/pet';
+import type { PetAd, PetKind } from '../../../entities/pet';
+import { useAuth } from '../../../entities/user';
 import { todayIso } from '../../../shared/lib';
-import { useCreatePetForm } from '../model/useCreatePetForm';
+import { usePetForm } from '../model/usePetForm';
 import { DESCRIPTION_MAX } from '../model/validation';
 import type { PetFormValues } from '../model/validation';
 import PhotoPicker from './PhotoPicker';
@@ -12,27 +13,30 @@ import PhotoPicker from './PhotoPicker';
 type TextFieldName = Exclude<keyof PetFormValues, 'photo'>;
 
 interface Props {
-    onCreated: (id: string) => void;
+    pet?: PetAd;
+    onSaved: (id: string) => void;
 }
 
 const REDIRECT_DELAY_MS = 1200;
 
-export default function CreatePetForm({ onCreated }: Props) {
-    const form = useCreatePetForm();
+export default function PetForm({ pet, onSaved }: Props) {
+    const { user } = useAuth();
+    const form = usePetForm(pet, user?.name);
+    const editing = pet !== undefined;
     const formRef = useRef<HTMLFormElement>(null);
-    const busy = form.submitting || form.createdId !== null;
+    const busy = form.submitting || form.savedId !== null;
 
     useEffect(() => {
-        if (!form.createdId) return;
-        const id = form.createdId;
-        const timer = setTimeout(() => onCreated(id), REDIRECT_DELAY_MS);
+        if (!form.savedId) return;
+        const id = form.savedId;
+        const timer = setTimeout(() => onSaved(id), REDIRECT_DELAY_MS);
         return () => clearTimeout(timer);
-    }, [form.createdId]);
+    }, [form.savedId]);
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
         const result = await form.submit();
-        if (result === 'invalid') {
+        if (result !== 'saved') {
             requestAnimationFrame(() => {
                 formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
             });
@@ -132,6 +136,9 @@ export default function CreatePetForm({ onCreated }: Props) {
                         file={form.values.photo}
                         error={form.errors.photo}
                         disabled={busy}
+                        currentUrl={form.currentPhotoUrl}
+                        removeCurrent={form.removePhoto}
+                        onRemoveCurrentChange={editing ? form.setRemovePhoto : undefined}
                         onChange={(file) => {
                             form.setValue('photo', file);
                             form.touch('photo');
@@ -143,8 +150,10 @@ export default function CreatePetForm({ onCreated }: Props) {
                     <Collapse in={form.submitError !== null}>
                         <Alert severity="error">{form.submitError}</Alert>
                     </Collapse>
-                    <Collapse in={form.createdId !== null}>
-                        <Alert severity="success">Объявление опубликовано. Переходим к карточке…</Alert>
+                    <Collapse in={form.savedId !== null}>
+                        <Alert severity="success">
+                            {editing ? 'Изменения сохранены. Возвращаемся к карточке…' : 'Объявление опубликовано. Переходим к карточке…'}
+                        </Alert>
                     </Collapse>
                 </Grid>
                 <Grid size={{ xs: 12 }}>
@@ -156,7 +165,7 @@ export default function CreatePetForm({ onCreated }: Props) {
                         disabled={busy}
                         startIcon={form.submitting ? <CircularProgress size={18} color="inherit" /> : undefined}
                     >
-                        {form.submitting ? 'Публикуем…' : 'Опубликовать'}
+                        {form.submitting ? 'Сохраняем…' : editing ? 'Сохранить изменения' : 'Опубликовать'}
                     </Button>
                 </Grid>
             </Grid>

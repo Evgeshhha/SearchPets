@@ -1,7 +1,5 @@
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export type Errors<V> = Partial<Record<keyof V, string>>;
-
 export function validateEmail(email: string): string | undefined {
     const value = email.trim();
     if (!value) return 'Укажите email';

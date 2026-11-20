@@ -1,71 +1,55 @@
 import { Link as RouterLink } from 'react-router-dom';
-import { Button, Grid, Typography } from '@mui/material';
+import { Alert, Box, Button, CircularProgress, Grid, Typography } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import PetsIcon from '@mui/icons-material/Pets';
 import SearchOffIcon from '@mui/icons-material/SearchOff';
-import { fetchPets, filterPets, hasActiveFilters, PetCard, PetCardSkeleton} from '../../../entities/pet';
-import { PetFilters, usePetFilters} from '../../../features/filter-pets';
-import { useAsync } from '../../../shared/lib';
+import { hasActiveFilters, PetCard, PetCardSkeleton, usePetList } from '../../../entities/pet';
+import { PetFilters, usePetFilters } from '../../../features/filter-pets';
 import { Appear, ErrorState, StateMessage } from '../../../shared/ui';
 
 const SKELETON_COUNT = 6;
-const MAX_STAGGER_MS = 300;
+const STAGGER_STEPS = 6;
+const STAGGER_MS = 60;
 
 export default function HomePage() {
-    const { filters, setFilters, reset } = usePetFilters();
-    const { state, reload } = useAsync(fetchPets, []);
+    const { filters, applied, setFilters, reset } = usePetFilters();
+    const { state, reload, loadMore } = usePetList(applied);
 
     const renderContent = () => {
         if (state.status === 'loading') {
             return (
-                <Grid
-                    container
-                    spacing={2}
-                    aria-busy="true"
-                    aria-label="Загрузка объявлений">
-                    {Array.from(
-                        { length: SKELETON_COUNT },
-                        (_, i) => (
-                            <Grid
-                                key={i}
-                                size={{ xs: 12, sm: 6, md: 4 }}>
-                                <PetCardSkeleton />
-                            </Grid>
-                        )
-                    )}
+                <Grid container spacing={2} aria-busy="true" aria-label="Загрузка объявлений">
+                    {Array.from({ length: SKELETON_COUNT }, (_, i) => (
+                        <Grid key={i} size={{ xs: 12, sm: 6, md: 4 }}>
+                            <PetCardSkeleton />
+                        </Grid>
+                    ))}
                 </Grid>
             );
         }
 
         if (state.status === 'error') {
-            return (
-                <ErrorState
-                    message={state.message}
-                    onRetry={reload}
-                />
-            );
+            return <ErrorState message={state.message ?? 'Не удалось загрузить объявления'} onRetry={reload} />;
         }
 
-        if (state.data.length === 0) {
+        if (state.items.length === 0) {
+            if (hasActiveFilters(applied)) {
+                return (
+                    <StateMessage
+                        icon={<SearchOffIcon sx={{ fontSize: 56, color: 'text.disabled' }} />}
+                        title="Ничего не найдено"
+                        description="Попробуйте изменить или сбросить фильтры."
+                        action={<Button onClick={reset}>Сбросить фильтры</Button>}
+                    />
+                );
+            }
             return (
                 <StateMessage
-                    icon={
-                        <PetsIcon
-                            sx={{
-                                fontSize: 56,
-                                color: 'text.disabled'
-                            }}
-                        />
-                    }
+                    icon={<PetsIcon sx={{ fontSize: 56, color: 'text.disabled' }} />}
                     title="Пока нет ни одного объявления"
                     description="Если ваш питомец пропал — опубликуйте объявление, это займёт пару минут."
                     action={
-                        <Button
-                            variant="contained"
-                            component={RouterLink}
-                            to="/pets/new"
-                            startIcon={<AddIcon />}
-                        >
+                        <Button variant="contained" component={RouterLink} to="/pets/new" startIcon={<AddIcon />}>
                             Подать объявление
                         </Button>
                     }
@@ -73,66 +57,35 @@ export default function HomePage() {
             );
         }
 
-        const pets = filterPets(state.data, filters);
-
-        if (pets.length === 0) {
-            return (
-                <StateMessage
-                    icon={
-                        <SearchOffIcon
-                            sx={{
-                                fontSize: 56,
-                                color: 'text.disabled'
-                            }}
-                        />
-                    }
-                    title="Ничего не найдено"
-                    description={
-                        hasActiveFilters(filters)
-                            ? 'Попробуйте изменить или сбросить фильтры.'
-                            : undefined
-                    }
-                    action={
-                        hasActiveFilters(filters)
-                            ? (
-                                <Button onClick={reset}>
-                                    Сбросить фильтры
-                                </Button>
-                            )
-                            : undefined
-                    }
-                />
-            );
-        }
-
         return (
             <>
-                <Typography
-                    color="text.secondary"
-                    sx={{ mb: 2 }}
-                    aria-live="polite"
-                >
-                    Найдено объявлений: {pets.length}
+                <Typography color="text.secondary" sx={{ mb: 2 }} aria-live="polite">
+                    Показано объявлений: {state.items.length}
                 </Typography>
-
                 <Grid container spacing={2}>
-                    {pets.map((pet, index) => (
-                        <Grid
-                            key={pet.id}
-                            size={{ xs: 12, sm: 6, md: 4 }}
-                        >
-                            <Appear
-                                fullHeight
-                                delay={Math.min(
-                                    index * 60,
-                                    MAX_STAGGER_MS
-                                )}
-                            >
+                    {state.items.map((pet, index) => (
+                        <Grid key={pet.id} size={{ xs: 12, sm: 6, md: 4 }}>
+                            <Appear fullHeight delay={(index % STAGGER_STEPS) * STAGGER_MS}>
                                 <PetCard pet={pet} />
                             </Appear>
                         </Grid>
                     ))}
                 </Grid>
+                {state.moreError && (
+                    <Alert severity="error" sx={{ mt: 2 }}>{state.moreError}</Alert>
+                )}
+                {state.hasMore && (
+                    <Box sx={{ textAlign: 'center', mt: 3 }}>
+                        <Button
+                            variant="outlined"
+                            onClick={loadMore}
+                            disabled={state.loadingMore}
+                            startIcon={state.loadingMore ? <CircularProgress size={18} /> : undefined}
+                        >
+                            {state.loadingMore ? 'Загружаем…' : 'Показать ещё'}
+                        </Button>
+                    </Box>
+                )}
             </>
         );
     };
@@ -142,13 +95,7 @@ export default function HomePage() {
             <Typography variant="h4" gutterBottom>
                 Объявления о пропавших животных
             </Typography>
-
-            <PetFilters
-                filters={filters}
-                onChange={setFilters}
-                onReset={reset}
-            />
-
+            <PetFilters filters={filters} onChange={setFilters} onReset={reset} />
             {renderContent()}
         </>
     );

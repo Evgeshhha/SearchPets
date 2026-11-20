@@ -1,18 +1,18 @@
 import { Box, Paper, Typography } from '@mui/material';
 import { KIND_LABEL, PetPhoto } from '../../../entities/pet';
 import type { PetAd } from '../../../entities/pet';
-import type { FlyerTemplate } from '../../../features/choose-flyer-template';
-import { formatDate } from '../../../shared/lib';
+import type { FlyerTemplate } from '../../../entities/flyer-template';
+import { contrastText, formatDate } from '../../../shared/lib';
 
 const COLOR_TRANSITION = 'background-color 0.3s ease';
 
 export default function FlyerSheet({ pet, template }: { pet: PetAd; template: FlyerTemplate }) {
     return (
-        <Paper sx={{ maxWidth: 595, width: '100%', bgcolor: template.bg, overflow: 'hidden', transition: COLOR_TRANSITION }}>
+        <Paper sx={{ maxWidth: 595, width: '100%', bgcolor: template.backgroundColor, overflow: 'hidden', transition: COLOR_TRANSITION }}>
             <Box
                 sx={{
-                    bgcolor: template.headBg,
-                    color: template.headColor,
+                    bgcolor: template.headerColor,
+                    color: contrastText(template.headerColor),
                     p: 2,
                     textAlign: 'center',
                     transition: COLOR_TRANSITION,

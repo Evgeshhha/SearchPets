@@ -1,12 +1,12 @@
 import { Link as RouterLink } from 'react-router-dom';
 import { Alert, Button, Collapse, Link, Stack, TextField, Typography } from '@mui/material';
 import { useAuth } from '../../../entities/user';
-import { useAuthForm } from '../model/useAuthForm';
+import { useForm } from '../../../shared/lib';
 import { validateEmail, validateNewPassword, validatePersonName } from '../model/validation';
 
 export default function RegisterForm() {
     const { register } = useAuth();
-    const form = useAuthForm(
+    const form = useForm(
         { name: '', email: '', password: '', confirm: '' },
         (v) => ({
             name: validatePersonName(v.name),
@@ -15,6 +15,7 @@ export default function RegisterForm() {
             confirm: v.confirm !== v.password ? 'Пароли не совпадают' : undefined,
         }),
         (v) => register({ name: v.name.trim(), email: v.email.trim(), password: v.password }),
+        { serverFields: { name: 'name', email: 'email', password: 'password' } },
     );
 
     return (

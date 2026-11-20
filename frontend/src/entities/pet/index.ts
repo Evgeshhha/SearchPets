@@ -1,8 +1,11 @@
-export { createPet, fetchPet, fetchPets, updatePetStatus } from './api/petApi';
-export { EMPTY_FILTERS, filterPets, hasActiveFilters } from './model/filter';
+export { createPet, deletePet, fetchPet, fetchShareInfo, updatePet, updatePetStatus } from './api/petApi';
+export type { PhotoChange } from './api/petApi';
+export { canManagePet } from './model/access';
+export { EMPTY_FILTERS, hasActiveFilters } from './model/filter';
 export type { PetFilters } from './model/filter';
 export { KIND_LABEL, PET_KINDS, PET_STATUSES, STATUS_LABEL } from './model/types';
 export type { NewPetInput, PetAd, PetKind, PetStatus } from './model/types';
+export { usePetList } from './model/usePetList';
 export { default as PetCard } from './ui/PetCard';
 export { default as PetCardSkeleton } from './ui/PetCardSkeleton';
 export { default as PetPhoto } from './ui/PetPhoto';

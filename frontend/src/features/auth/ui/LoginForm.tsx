@@ -1,18 +1,19 @@
 import { Link as RouterLink } from 'react-router-dom';
 import { Alert, Button, Collapse, Link, Stack, TextField, Typography } from '@mui/material';
 import { useAuth } from '../../../entities/user';
-import { useAuthForm } from '../model/useAuthForm';
+import { useForm } from '../../../shared/lib';
 import { validateEmail } from '../model/validation';
 
 export default function LoginForm() {
     const { login } = useAuth();
-    const form = useAuthForm(
+    const form = useForm(
         { email: '', password: '' },
         (v) => ({
             email: validateEmail(v.email),
             password: v.password ? undefined : 'Введите пароль',
         }),
         (v) => login(v.email.trim(), v.password),
+        { serverFields: { email: 'email' } },
     );
 
     return (

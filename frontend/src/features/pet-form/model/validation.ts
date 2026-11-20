@@ -38,7 +38,7 @@ export const PHOTO_MAX_BYTES = 5 * 1024 * 1024;
 const PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
 const PERSON_NAME = /^[\p{L}\s'-]+$/u;
-const PHONE_CHARS = /^\+?[\d\s()-]+$/;
+const PHONE_FORMAT = /^\+?[0-9][0-9\s\-()]{5,28}$/;
 
 export function validatePetForm(v: PetFormValues): PetFormErrors {
     const errors: PetFormErrors = {};
@@ -79,7 +79,7 @@ export function validatePetForm(v: PetFormValues): PetFormErrors {
     const phone = v.contactPhone.trim();
     const digits = phone.replace(/\D/g, '');
     if (!phone) errors.contactPhone = 'Укажите телефон для связи';
-    else if (!PHONE_CHARS.test(phone)) errors.contactPhone = 'Допустимы цифры, пробелы, +, скобки и дефис';
+    else if (!PHONE_FORMAT.test(phone)) errors.contactPhone = 'Номер начинается с цифры или «+»; допустимы цифры, пробелы, скобки и дефис';
     else if (digits.length < 10 || digits.length > 15) errors.contactPhone = 'Телефон должен содержать от 10 до 15 цифр';
 
     if (v.photo) {

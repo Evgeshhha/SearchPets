@@ -1,24 +1,24 @@
 import { ToggleButton, ToggleButtonGroup } from '@mui/material';
-import { FLYER_TEMPLATE_KEYS, FLYER_TEMPLATES } from '../model/templates';
-import type { FlyerTemplateKey } from '../model/templates';
+import type { FlyerTemplate } from '../../../entities/flyer-template';
 
 interface Props {
-    value: FlyerTemplateKey;
-    onChange: (next: FlyerTemplateKey) => void;
+    templates: FlyerTemplate[];
+    value: number;
+    onChange: (id: number) => void;
 }
 
-export default function FlyerTemplatePicker({ value, onChange }: Props) {
+export default function FlyerTemplatePicker({ templates, value, onChange }: Props) {
     return (
         <ToggleButtonGroup
             exclusive
             size="small"
             orientation="vertical"
             value={value}
-            onChange={(_, next: FlyerTemplateKey | null) => next && onChange(next)}
+            onChange={(_, next: number | null) => next !== null && onChange(next)}
         >
-            {FLYER_TEMPLATE_KEYS.map((key) => (
-                <ToggleButton key={key} value={key}>
-                    {FLYER_TEMPLATES[key].label}
+            {templates.map((t) => (
+                <ToggleButton key={t.id} value={t.id}>
+                    {t.title}
                 </ToggleButton>
             ))}
         </ToggleButtonGroup>
