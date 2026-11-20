@@ -108,7 +108,7 @@ class AnnouncementCreate(BaseModel):
         return self
 
 class AnnouncementUpdate(BaseModel):
-    flyer_template_id: int | None = Field(None, gt=0)
+    pet: PetUpdate | None = None  
     last_seen_place: str | None = Field(None, min_length=1, max_length=255)
     latitude: float | None = Field(None, ge=-90, le=90)
     longitude: float | None = Field(None, ge=-180, le=180)

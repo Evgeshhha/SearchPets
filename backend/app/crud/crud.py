@@ -55,13 +55,16 @@ def create_pet(db: Session, data: PetCreate, user: User) -> Pet:
     db.commit()
     return pet
 
+def _check_pet_changes(changes: dict) -> None:
+    for required in ("name", "kind"):
+        if required in changes and changes[required] is None:
+            raise ConflictError(f"Поле {required} нельзя очистить")
+
 def update_pet(db: Session, pet_id: int, data: PetUpdate, user: User) -> Pet:
     pet = get_pet(db, pet_id)
     ensure_can_modify(pet, user)
     changes = data.model_dump(exclude_unset=True)
-    for required in ("name", "kind"):
-        if required in changes and changes[required] is None:
-            raise ConflictError(f"Поле {required} нельзя очистить")
+    _check_pet_changes(changes)
     _apply(pet, changes)
     db.commit()
     return pet
@@ -127,8 +130,11 @@ def list_announcements(
     if kind:
         stmt = stmt.where(Pet.kind == kind)
     if q:
-        like = f"%{q}%"
-        stmt = stmt.where(Pet.name.ilike(like) | Announcement.last_seen_place.ilike(like))
+        escaped = q.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+        like = f"%{escaped}%"
+        stmt = stmt.where(
+            Pet.name.ilike(like, escape="\\") | Announcement.last_seen_place.ilike(like, escape="\\")
+        )
     return list(db.scalars(stmt))
 
 def get_announcement(db: Session, ann_id: int) -> Announcement:
@@ -144,7 +150,7 @@ def create_announcement(db: Session, data: AnnouncementCreate, user: User) -> An
         db.flush()
     else:
         pet = get_pet(db, data.pet_id)
-        ensure_can_modify(pet, user)  # объявление можно создать только для своего питомца
+        ensure_can_modify(pet, user)  
 
     ann = Announcement(
         pet_id=pet.id,
@@ -159,6 +165,7 @@ def update_announcement(db: Session, ann_id: int, data: AnnouncementUpdate, user
     ann = get_announcement(db, ann_id)
     ensure_can_modify(ann, user)
     changes = data.model_dump(exclude_unset=True)
+    pet_changes = changes.pop("pet", None) or {}
     for required in ("last_seen_place", "last_seen_at", "status", "contact_name", "contact_phone"):
         if required in changes and changes[required] is None:
             raise ConflictError(f"Поле {required} нельзя очистить")
@@ -170,7 +177,12 @@ def update_announcement(db: Session, ann_id: int, data: AnnouncementUpdate, user
     if (lat is None) != (lon is None):
         raise ConflictError("Координаты задаются парой: latitude и longitude")
 
+    if pet_changes:
+        ensure_can_modify(ann.pet, user)
+        _check_pet_changes(pet_changes)
+
     _apply(ann, changes)
+    _apply(ann.pet, pet_changes)
     db.commit()
     return ann
 
@@ -194,7 +206,7 @@ def create_sighting(db: Session, ann_id: int, data: SightingCreate) -> Sighting:
 
 def delete_sighting(db: Session, ann_id: int, sighting_id: int, user: User) -> None:
     ann = get_announcement(db, ann_id)
-    ensure_can_modify(ann, user)  # отметки удаляет владелец объявления
+    ensure_can_modify(ann, user)  
     sighting = db.get(Sighting, sighting_id)
     if sighting is None or sighting.announcement_id != ann_id:
         raise NotFoundError(f"Отметка с id={sighting_id} не найдена в объявлении id={ann_id}")
